@@ -24,6 +24,6 @@ banister_function_mae <- function (v, Training.Load, Performance) {
   abs_errors <- abs(Performance[!is.na(Performance)] - Predicted.Performance[which(!is.na(Performance))]) 
   MAE <- mean(abs_errors)
   
-  return(MAE) #...and returns the mean absoulte errors
+  return(MAE) #...and returns the mean absolute error
 }
 

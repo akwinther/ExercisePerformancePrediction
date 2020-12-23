@@ -29,7 +29,7 @@ subjects_data = pd.read_excel('Busso2017su1.xlsx')
 training_cols = subjects_data.iloc[:, 1:13:2]
 performance_cols = subjects_data.iloc[:, 2:13:2]
 
-subjects_list = []
+list_of_subject_data = []
 
 for i in range(0,6):
     data = {'day' : subjects_data.iloc[:, 0], 
@@ -40,7 +40,7 @@ for i in range(0,6):
     df['week_num'] = np.repeat(np.arange(0, 16), 7)[0:len(df['day'])]
     df['day_in_week'] = np.array(list(np.arange(1,8))*16)[0:len(df['day'])]
     df['perf_int'] = df['performance'].interpolate(method = "cubic").fillna(method = "bfill").fillna(method = "ffill")
-    df['subject'] = i
+    df['subject'] = str('subject') + str(i+1)
     phase_conditions = [
         (df['week_num'] == 0),
         (df['week_num'] >= 1) & (df['week_num'] <= 8),
@@ -57,6 +57,6 @@ for i in range(0,6):
     
     df = df[['subject', 'day', 'week_num', 'day_in_week', 'phase', 'session', 'tl', 'performance', 'perf_int']]
     
-    subjects_list.append(df)
+    list_of_subject_data.append(df)
 
-subjects_df = pd.concat(subjects_list)
+#subjects_df = pd.concat(subjects_list)
