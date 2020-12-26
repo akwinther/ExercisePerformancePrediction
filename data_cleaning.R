@@ -16,8 +16,9 @@ for (i in 1:6) {
 }
 
 names(subjects_list) <- paste("Subject", 1:6, sep ="") #Sets the name of each data frame in the list to 'Athlete1', 2, etc
+
 subjects_list <- lapply(subjects_list, function(x) { #Sets the name of each column within the data frames
-  colnames(x) <- c("Day", "Training.Load", "Performance")
+  colnames(x) <- c("day", "tl", "performance")
   return(x)
 })
 

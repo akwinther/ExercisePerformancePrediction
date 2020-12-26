@@ -1,38 +1,33 @@
 # Run *optim* over each athlete in a list
-banister_optimised <- vector("list", 6)
+optim_results_banister <- vector("list", 6)
 for (i in 1:6) {
-  banister_optimised[[i]] <- optim(par = c(256, 0.10, 0.10, 15, 11), fn = banister_function_sse, Training.Load = subjects_list[[i]][,2], Performance = subjects_list[[i]][,3])
+  optim_results_banister[[i]] <- optim(par = c(255, 0.10, 0.10, 15, 11), fn = banister_function_mae, tl = subjects_list[[i]][,2], performance = subjects_list[[i]][,3])
 }  
-names(banister_optimised) <- paste("Subject", 1:6, sep = "")
-str(banister_optimised[1])
+names(optim_results_banister) <- paste("Subject", 1:6, sep = "")
 
-# Put banister parameters and SSE in a dataframe for all athletes 
-banister_parameters <- vector("list", 6)
-for (i in 1:6) {
-  banister_parameters[[i]] <- list("Day" = subjects_list[[i]][,1], "Training.Load" = subjects_list[[i]][,2], "Performance" = subjects_list[[i]][,3], "Parameters" = banister_optimised[[i]]$par, "SSE" = banister_optimised[[i]]$value)
+get_performance <- function(theta, tl, performance) {
+  int  <- theta[1] # performance baseline
+  k1   <- theta[2] # fitness weight
+  k2   <- theta[3] # fatigue weight
+  tau1 <- theta[4] # fitness decay
+  tau2 <- theta[5] # fatigue decay
+  
+  fitness <- sapply(1:length(tl),
+                    function(n) convolve_training(tl, n, tau1))
+  
+  fatigue <- sapply(1:length(tl),
+                    function(n) convolve_training(tl, n, tau2))
+  
+  int + k1 * fitness - k2 * fatigue
 }
-names(banister_parameters) <- paste("Subject", 1:6, sep = "")
-str(banister_parameters[1])
 
 
-banister_models <- lapply(banister_parameters, function(x) {
-  p0 <- x$Parameters[1]; k1 <- x$Parameters[2]; k2 <- x$Parameters[3]; tau1 <- x$Parameters[4]; tau2 <- x$Parameters[5]
-  Fitness <- 0
-  Fatigue <- 0
-  for (i in 1:length(x$Training.Load)) {
-    Fitness[i+1] <- Fitness[i] * exp(-1/tau1) + x$Training.Load[i+1]
-    Fatigue[i+1] <- Fatigue[i] * exp(-1/tau2) + x$Training.Load[i+1]
-    Predicted_Performance <- p0 + k1*Fitness - k2*Fatigue
-  }
-  Errors <- x$Performance[!is.na(x$Performance)] - Predicted_Performance[which(!is.na(x$Performance))]
-  SSE <- sum(Errors^2)
-  R2 <- (cor(x$Performance[!is.na(x$Performance)], Predicted_Performance[which(!is.na(x$Performance))]))^2
-  return(list("Day" = x$Day, "Training.Load" = x$Training.Load, "Performance" = x$Performance, "Predicted_Performance" = Predicted_Performance[!is.na(Predicted_Performance)], "SSE" = SSE ,"R2" = R2))
-})
+for (i in 1:6) {
+  subjects_list[[i]]$perf_hat <- get_performance(optim_results[[i]]$par, banister_parameters[[i]]$tl, banister_parameters[[i]]$performance)
+  
+}
 
-lapply(banister_models, function(x) {
-  return(x$R2)
-})
+r2 <- sapply(subjects_list, function(x) cor(x$performance, x$perf_hat, use = "complete.obs")^2)  
 
 # Visualize results
 
@@ -56,3 +51,36 @@ banister_plots <- ggplot(banister_df, aes(x = Week, y = Predicted_Performance)) 
   facet_wrap(~ Subject, ncol = 2) 
 
 banister_plots
+
+
+# Try busso mod
+# Run *optim* over each athlete in a list
+optim_results_busso <- vector("list", 6)
+for (i in 1:6) {
+  optim_results_busso[[i]] <- optim(par = c(255, 0.01, 0.00001, 30, 15, 1), fn = busso_function_mae, tl = subjects_list[[i]][,2], performance = subjects_list[[i]][,3])
+                              
+}  
+
+names(optim_results_busso) <- paste("Subject", 1:6, sep = "")
+
+lapply(optim_results_busso, function(x) x$par)
+lapply(optim_results_banister, function(x) x$par)
+
+lapply(optim_results_busso, function(x) x$value)
+lapply(optim_results_banister, function(x) x$value)
+
+get_performance_busso <- function(theta, tl, performance) {
+  int  <- theta[1] # performance baseline
+  k1   <- theta[2] # fitness weight
+  k2   <- theta[3] # fatigue weight
+  tau1 <- theta[4] # fitness decay
+  tau2 <- theta[5] # fatigue decay
+  
+  fitness <- sapply(1:length(tl),
+                    function(n) convolve_training(tl, n, tau1))
+  
+  fatigue <- sapply(1:length(tl),
+                    function(n) convolve_training(tl, n, tau2))
+  
+  int + k1 * fitness - k2 * fatigue
+}
